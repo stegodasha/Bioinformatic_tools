@@ -1,63 +1,97 @@
 def filter_dna(seqs: dict, gc_bounds=0, length_bounds=0, quality_threshold=0):
     seqs_qualities = list(seqs.values())
+    seqs_keys = list(seqs.keys())
+
     sequences = []
     qualities = []
+
     for sequence in range(len(seqs_qualities)):
         sequences.append(seqs_qualities[sequence][0])
     for quality in range(len(seqs_qualities)):
         qualities.append(seqs_qualities[quality][1])
-    pass
+
+    gcf = gc_count_filter(sequences, gc_bounds)
+    lf = length_filter(sequences, length_bounds)
+    qtf = quality_threshold_filter(qualities, quality_threshold)
+
+    print("gc compartment: ", gcf)
+    print('length ceil: ', lf)
+    print('quality borders: ', qtf)
+    print('\n')
+
+    for seq_counter in range(len(gcf)):
+        if gcf[seq_counter] is False or lf[seq_counter] is False or qtf[seq_counter] is False:
+            del seqs[seqs_keys[seq_counter]]
+
+    return seqs
 
 
-def gc_count_filter(sequences: list, gc_bounds=(0, 100)):
+def gc_count_filter(sequences: list, gc_bounds):
     gc = []
     gc_answer = []
     for sequence in range(len(sequences)):
         gc.append((sequences[sequence].upper().count('G') + sequences[sequence].upper().count('C')) / len(
             sequences[sequence]) * 100)
-    print(gc)
+
     for gc_content in gc:
-        if gc_bounds[0] < gc_content < gc_bounds[1]:
-            gc_answer.append(True)
+
+        if type(gc_bounds) == int:
+            if gc_content < gc_bounds:
+                gc_answer.append(True)
+            else:
+                gc_answer.append(False)
+
         else:
-            gc_answer.append(False)
+
+            if gc_bounds[0] < gc_content < gc_bounds[1]:
+                gc_answer.append(True)
+            else:
+                gc_answer.append(False)
+
     return gc_answer
-    print(gc)
 
 
-def length_filter(sequences, length_bounds=(0, 1000)):
+def length_filter(sequences, length_bounds):
     length_sequences = []
     length_sequences_answer = []
+
     for sequence in range(len(sequences)):
         length_sequences.append(len(sequences[sequence]))
+
     for length in length_sequences:
-        if length_bounds[0] < length < length_bounds[1]:
-            length_sequences_answer.append(True)
+        if type(length_bounds) == int:
+
+            if length < length_bounds:
+                length_sequences_answer.append(True)
+            else:
+                length_sequences_answer.append(False)
+
         else:
-            length_sequences_answer.append(False)
+
+            if length_bounds[0] < length < length_bounds[1]:
+                length_sequences_answer.append(True)
+            else:
+                length_sequences_answer.append(False)
+
     return length_sequences_answer
 
 
 def quality_threshold_filter(qualities, quality_threshold=0):
     quality_answers = []
+
     for quality in qualities:
         summ_qualities = 0
+
         for symbol in range(len(quality)):
             letter = ord(quality[symbol]) - 33
             summ_qualities += letter
         avg_quality = summ_qualities / len(quality)
-        print(avg_quality)
-        if avg_quality > quality_threshold :
+        if avg_quality > quality_threshold:
             quality_answers.append(True)
         else:
             quality_answers.append(False)
+
     return quality_answers
-
-
-    # print(qualities)
-    # print(sequences)
-    # print(seqs_qualities)
-    # sequence = seqs_name[0:len(seqs_name)-1]
 
 
 EXAMPLE_FASTQ = {
@@ -99,9 +133,5 @@ EXAMPLE_FASTQ = {
         'AGTGAGACACCCCTGAACATTCCTAGTAAGACATCTTTGAATATTACTAGTTAGCCACACTTTAAAATGACCCG',
         '<98;<@@@:@CD@BCCDD=DBBCEBBAAA@9???@BCDBCGF=GEGDFGDBEEEEEFFFF=EDEE=DCD@@BBC')
 }
-# filter_dna(EXAMPLE_FASTQ)
-#print(length_filter(['ACAGCAACATAAACATGATGGGATGGCGTAAGCCCCCGAGATATCAGTTTACCCAGGATAAGAGATTAAATTATGAGCAACATTATTAA',
-                    # 'ATTAGCGAGGAGGAGTGCTGAGAAGATGTCGCCTACGCCGTTGAAATTCCCTTCAATCAGGGGGTACTGGAGGATACGAGTTTGTGTG']))
-#print(ord('A'))
 
-print(quality_threshold_filter(['<<<=;@B??@<>@><48876EADEG6B<A@*;398@.=BB<7:>.BB@.?+98204<:<>@?A=@EFEFFFEEFB', '<98;<@@@:@CD@BCCDD=DBBCEBBAAA@9???@BCDBCGF=GEGDFGDBEEEEEFFFF=EDEE=DCD@@BBC','1']))
+print(filter_dna(EXAMPLE_FASTQ, gc_bounds=30, length_bounds=100000, quality_threshold=0))
