@@ -23,6 +23,23 @@ def gc_count_filter(sequences: list, gc_bounds=(0, 100)):
             gc_answer.append(False)
     return gc_answer
     print(gc)
+
+
+def length_filter(sequences, length_bounds=(0, 1000)):
+    length_sequences = []
+    length_sequences_answer = []
+    for sequence in range(len(sequences)):
+        length_sequences.append(len(sequences[sequence]))
+    for length in length_sequences:
+        if length_bounds[0] < length < length_bounds[1]:
+            length_sequences_answer.append(True)
+        else:
+            length_sequences_answer.append(False)
+    return length_sequences_answer
+
+
+
+
     # print(qualities)
     # print(sequences)
     # print(seqs_qualities)
@@ -69,5 +86,5 @@ EXAMPLE_FASTQ = {
         '<98;<@@@:@CD@BCCDD=DBBCEBBAAA@9???@BCDBCGF=GEGDFGDBEEEEEFFFF=EDEE=DCD@@BBC')
 }
 # filter_dna(EXAMPLE_FASTQ)
-print(gc_count_filter(['ACAGCAACATAAACATGATGGGATGGCGTAAGCCCCCGAGATATCAGTTTACCCAGGATAAGAGATTAAATTATGAGCAACATTATTAA',
-          'ATTAGCGAGGAGGAGTGCTGAGAAGATGTCGCCTACGCCGTTGAAATTCCCTTCAATCAGGGGGTACTGGAGGATACGAGTTTGTGTG']))
+print(length_filter(['ACAGCAACATAAACATGATGGGATGGCGTAAGCCCCCGAGATATCAGTTTACCCAGGATAAGAGATTAAATTATGAGCAACATTATTAA',
+                     'ATTAGCGAGGAGGAGTGCTGAGAAGATGTCGCCTACGCCGTTGAAATTCCCTTCAATCAGGGGGTACTGGAGGATACGAGTTTGTGTG']))
