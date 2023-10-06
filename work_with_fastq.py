@@ -38,6 +38,20 @@ def length_filter(sequences, length_bounds=(0, 1000)):
     return length_sequences_answer
 
 
+def quality_threshold_filter(qualities, quality_threshold=0):
+    quality_answers = []
+    for quality in qualities:
+        summ_qualities = 0
+        for symbol in range(len(quality)):
+            letter = ord(quality[symbol]) - 33
+            summ_qualities += letter
+        avg_quality = summ_qualities / len(quality)
+        print(avg_quality)
+        if avg_quality > quality_threshold :
+            quality_answers.append(True)
+        else:
+            quality_answers.append(False)
+    return quality_answers
 
 
     # print(qualities)
@@ -86,5 +100,8 @@ EXAMPLE_FASTQ = {
         '<98;<@@@:@CD@BCCDD=DBBCEBBAAA@9???@BCDBCGF=GEGDFGDBEEEEEFFFF=EDEE=DCD@@BBC')
 }
 # filter_dna(EXAMPLE_FASTQ)
-print(length_filter(['ACAGCAACATAAACATGATGGGATGGCGTAAGCCCCCGAGATATCAGTTTACCCAGGATAAGAGATTAAATTATGAGCAACATTATTAA',
-                     'ATTAGCGAGGAGGAGTGCTGAGAAGATGTCGCCTACGCCGTTGAAATTCCCTTCAATCAGGGGGTACTGGAGGATACGAGTTTGTGTG']))
+#print(length_filter(['ACAGCAACATAAACATGATGGGATGGCGTAAGCCCCCGAGATATCAGTTTACCCAGGATAAGAGATTAAATTATGAGCAACATTATTAA',
+                    # 'ATTAGCGAGGAGGAGTGCTGAGAAGATGTCGCCTACGCCGTTGAAATTCCCTTCAATCAGGGGGTACTGGAGGATACGAGTTTGTGTG']))
+#print(ord('A'))
+
+print(quality_threshold_filter(['<<<=;@B??@<>@><48876EADEG6B<A@*;398@.=BB<7:>.BB@.?+98204<:<>@?A=@EFEFFFEEFB', '<98;<@@@:@CD@BCCDD=DBBCEBBAAA@9???@BCDBCGF=GEGDFGDBEEEEEFFFF=EDEE=DCD@@BBC','1']))
