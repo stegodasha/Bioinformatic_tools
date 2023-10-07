@@ -123,4 +123,3 @@ def filter_dna(seqs: dict, gc_bounds: int = (0, 100), length_bounds: int = (0, 2
             del seqs[seqs_keys[seq_counter]]
 
     return seqs
-
