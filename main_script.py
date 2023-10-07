@@ -1,4 +1,20 @@
-import internal_functions.dna_rna_tools
+from internal_functions.dna_rna_tools import transcribe
+from internal_functions.dna_rna_tools import reverse
+from internal_functions.dna_rna_tools import complement
+from internal_functions.dna_rna_tools import reverse_complement
+from internal_functions.protein_analysis_tool import molecular_weight
+from internal_functions.protein_analysis_tool import one_letter_to_three
+from internal_functions.protein_analysis_tool import get_amino_acid_sum
+from internal_functions.protein_analysis_tool import codon_optimization
+from internal_functions.protein_analysis_tool import length
+from internal_functions.protein_analysis_tool import name_transform
+from internal_functions.protein_analysis_tool import is_amino_acid
+from internal_functions.protein_analysis_tool import brutto_count
+from internal_functions.protein_analysis_tool import is_length_divisible_by_3
+from internal_functions.protein_analysis_tool import is_amino_acid_three_letter
+from internal_functions.work_with_fastq import gc_count_filter
+from internal_functions.work_with_fastq import length_filter
+from internal_functions.work_with_fastq import quality_threshold_filter
 
 
 def run_dna_rna_tools(*args: str) -> str:
@@ -107,3 +123,4 @@ def filter_dna(seqs: dict, gc_bounds: int = (0, 100), length_bounds: int = (0, 2
             del seqs[seqs_keys[seq_counter]]
 
     return seqs
+
