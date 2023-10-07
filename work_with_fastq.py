@@ -1,4 +1,19 @@
-def filter_dna(seqs: dict, gc_bounds=0, length_bounds=0, quality_threshold=0):
+def filter_dna(seqs: dict, gc_bounds: int = (0, 100), length_bounds: int = (0, 2**32),
+               quality_threshold: int = 0) -> dict:
+    """
+    Filter fastq-sequences by parameters: gc_bounds, length_bounds and quality_threshold.
+
+    Arguments:
+    - seqs (dict): A dictionary where the key is the name of the sequence
+                   and the value is a tuple of two strings: sequence and quality
+    - gc_bounds (int): the GC interval of the composition (in percent) for filtering (by default is (0, 100)
+    - length_bounds (int): length interval for filtering (default is (0, 2**32))
+    - quality_threshold (int): the threshold value of the average quality of the read
+                               for filtering (by default is 0)
+
+    Return:
+    - the source dictionary filtered by all parameters
+    """
     seqs_qualities = list(seqs.values())
     seqs_keys = list(seqs.keys())
 
@@ -14,11 +29,6 @@ def filter_dna(seqs: dict, gc_bounds=0, length_bounds=0, quality_threshold=0):
     lf = length_filter(sequences, length_bounds)
     qtf = quality_threshold_filter(qualities, quality_threshold)
 
-    print("gc compartment: ", gcf)
-    print('length ceil: ', lf)
-    print('quality borders: ', qtf)
-    print('\n')
-
     for seq_counter in range(len(gcf)):
         if gcf[seq_counter] is False or lf[seq_counter] is False or qtf[seq_counter] is False:
             del seqs[seqs_keys[seq_counter]]
@@ -26,7 +36,19 @@ def filter_dna(seqs: dict, gc_bounds=0, length_bounds=0, quality_threshold=0):
     return seqs
 
 
-def gc_count_filter(sequences: list, gc_bounds):
+def gc_count_filter(sequences: list[str], gc_bounds: int) -> list[bool]:
+    """
+    Filter sequences by parameter gc_bounds.
+
+    Arguments:
+    - sequences (list[str]): list of sequences
+    - gc_bounds (int): the GC interval of the composition (in percent) for filtering (by default is (0, 100)
+
+
+    Return:
+    - a list of boolean values, where true corresponds to the passage of the filtering element
+      by parameter gc_bounds
+    """
     gc = []
     gc_answer = []
     for sequence in range(len(sequences)):
@@ -51,7 +73,18 @@ def gc_count_filter(sequences: list, gc_bounds):
     return gc_answer
 
 
-def length_filter(sequences, length_bounds):
+def length_filter(sequences: list[str], length_bounds: int) -> list[bool]:
+    """
+        Filter sequences by parameter length_bounds
+
+        Arguments:
+        - sequences (list[str]): list of sequences
+        - length_bounds (int): length interval for filtering (default is (0, 2**32))
+
+        Return:
+        - a list of boolean values, where true corresponds to the passage of the filtering element
+          by parameter length_bounds
+        """
     length_sequences = []
     length_sequences_answer = []
 
@@ -76,7 +109,19 @@ def length_filter(sequences, length_bounds):
     return length_sequences_answer
 
 
-def quality_threshold_filter(qualities, quality_threshold=0):
+def quality_threshold_filter(qualities: list[str], quality_threshold: int = 0) -> list[bool]:
+    """
+            Filter qualities by parameter quality_threshold
+
+            Arguments:
+            - qualities(list[str]): list of qualities
+            - quality_threshold (int): the threshold value of the average quality of the read
+                                       for filtering (by default is 0)
+
+            Return:
+            - a list of boolean values, where true corresponds to the passage of the filtering element
+              by parameter quality_threshold
+            """
     quality_answers = []
 
     for quality in qualities:
@@ -92,46 +137,3 @@ def quality_threshold_filter(qualities, quality_threshold=0):
             quality_answers.append(False)
 
     return quality_answers
-
-
-EXAMPLE_FASTQ = {
-    # 'name' : ('sequence', 'quality')
-    '@SRX079804:1:SRR292678:1:1101:21885:21885': (
-        'ACAGCAACATAAACATGATGGGATGGCGTAAGCCCCCGAGATATCAGTTTACCCAGGATAAGAGATTAAATTATGAGCAACATTATTAA',
-        'FGGGFGGGFGGGFGDFGCEBB@CCDFDDFFFFBFFGFGEFDFFFF;D@DD>C@DDGGGDFGDGG?GFGFEGFGGEF@FDGGGFGFBGGD'),
-    '@SRX079804:1:SRR292678:1:1101:24563:24563': (
-        'ATTAGCGAGGAGGAGTGCTGAGAAGATGTCGCCTACGCCGTTGAAATTCCCTTCAATCAGGGGGTACTGGAGGATACGAGTTTGTGTG',
-        'BFFFFFFFB@B@A<@D>BDDACDDDEBEDEFFFBFFFEFFDFFF=CC@DDFD8FFFFFFF8/+.2,@7<<:?B/:<><-><@.A*C>D'),
-    '@SRX079804:1:SRR292678:1:1101:30161:30161': (
-        'GAACGACAGCAGCTCCTGCATAACCGCGTCCTTCTTCTTTAGCGTTGTGCAAAGCATGTTTTGTATTACGGGCATCTCGAGCGAATC',
-        'DFFFEGDGGGGFGGEDCCDCEFFFFCCCCCB>CEBFGFBGGG?DE=:6@=>A<A>D?D8DCEE:>EEABE5D@5:DDCA;EEE-DCD'),
-    '@SRX079804:1:SRR292678:1:1101:47176:47176': (
-        'TGAAGCGTCGATAGAAGTTAGCAAACCCGCGGAACTTCCGTACATCAGACACATTCCGGGGGGTGGGCCAATCCATGATGCCTTTG',
-        'FF@FFBEEEEFFEFFD@EDEFFB=DFEEFFFE8FFE8EEDBFDFEEBE+E<C<C@FFFFF;;338<??D:@=DD:8DDDD@EE?EB'),
-    '@SRX079804:1:SRR292678:1:1101:149302:149302': (
-        'TAGGGTTGTATTTGCAGATCCATGGCATGCCAAAAAGAACATCGTCCCGTCCAATATCTGCAACATACCAGTTGGTTGGTA',
-        '@;CBA=:@;@DBDCDEEE/EEEEEEF@>FBEEB=EFA>EEBD=DAEEEEB9)99>B99BC)@,@<9CDD=C,5;B::?@;A'),
-    '@SRX079804:1:SRR292678:1:1101:170868:170868': (
-        'CTGCCGAGACTGTTCTCAGACATGGAAAGCTCGATTCGCATACACTCGCTGAGTAAGAGAGTCACACCAAATCACAGATT',
-        'E;FFFEGFGIGGFBG;C6D<@C7CDGFEFGFHDFEHHHBBHHFDFEFBAEEEEDE@A2=DA:??C3<BCA7@DCDEG*EB'),
-    '@SRX079804:1:SRR292678:1:1101:171075:171075': (
-        'CATTATAGTAATACGGAAGATGACTTGCTGTTATCATTACAGCTCCATCGCATGAATAATTCTCTAATATAGTTGTCAT',
-        'HGHHHHGFHHHHFHHEHHHHFGEHFGFGGGHHEEGHHEEHBHHFGDDECEGGGEFGF<FGGIIGEBGDFFFGFFGGFGF'),
-    '@SRX079804:1:SRR292678:1:1101:175500:175500': (
-        'GACGCCGTGGCTGCACTATTTGAGGCACCTGTCCTCGAAGGGAAGTTCATCTCGACGCGTGTCACTATGACATGAATG',
-        'GGGGGFFCFEEEFFDGFBGGGA5DG@5DDCBDDE=GFADDFF5BE49<<<BDD?CE<A<8:59;@C.C9CECBAC=DE'),
-    '@SRX079804:1:SRR292678:1:1101:190136:190136': (
-        'GAACCTTCTTTAATTTATCTAGAGCCCAAATTTTAGTCAATCTATCAACTAAAATACCTACTGCTACTACAAGTATT',
-        'DACD@BEECEDE.BEDDDDD,>:@>EEBEEHEFEHHFFHH?FGBGFBBD77B;;C?FFFFGGFED.BBABBG@DBBE'),
-    '@SRX079804:1:SRR292678:1:1101:190845:190845': (
-        'CCTCAGCGTGGATTGCCGCTCATGCAGGAGCAGATAATCCCTTCGCCATCCCATTAAGCGCCGTTGTCGGTATTCC',
-        'FF@FFCFEECEBEC@@BBBBDFBBFFDFFEFFEB8FFFFFFFFEFCEB/>BBA@AFFFEEEEECE;ACD@DBBEEE'),
-    '@SRX079804:1:SRR292678:1:1101:198993:198993': (
-        'AGTTATTTATGCATCATTCTCATGTATGAGCCAACAAGATAGTACAAGTTTTATTGCTATGAGTTCAGTACAACA',
-        '<<<=;@B??@<>@><48876EADEG6B<A@*;398@.=BB<7:>.BB@.?+98204<:<>@?A=@EFEFFFEEFB'),
-    '@SRX079804:1:SRR292678:1:1101:204480:204480': (
-        'AGTGAGACACCCCTGAACATTCCTAGTAAGACATCTTTGAATATTACTAGTTAGCCACACTTTAAAATGACCCG',
-        '<98;<@@@:@CD@BCCDD=DBBCEBBAAA@9???@BCDBCGF=GEGDFGDBEEEEEFFFF=EDEE=DCD@@BBC')
-}
-
-print(filter_dna(EXAMPLE_FASTQ, gc_bounds=30, length_bounds=100000, quality_threshold=0))
