@@ -20,14 +20,14 @@ def gc_count_filter(sequences: list[str], gc_bounds: int) -> list[bool]:
     for gc_content in gc:
 
         if type(gc_bounds) == int:
-            if gc_content < gc_bounds:
+            if gc_content <= gc_bounds:
                 gc_answer.append(True)
             else:
                 gc_answer.append(False)
 
         else:
 
-            if gc_bounds[0] < gc_content < gc_bounds[1]:
+            if gc_bounds[0] <= gc_content <= gc_bounds[1]:
                 gc_answer.append(True)
             else:
                 gc_answer.append(False)
@@ -56,14 +56,14 @@ def length_filter(sequences: list[str], length_bounds: int) -> list[bool]:
     for length in length_sequences:
         if type(length_bounds) == int:
 
-            if length < length_bounds:
+            if length <= length_bounds:
                 length_sequences_answer.append(True)
             else:
                 length_sequences_answer.append(False)
 
         else:
 
-            if length_bounds[0] < length < length_bounds[1]:
+            if length_bounds[0] <= length <= length_bounds[1]:
                 length_sequences_answer.append(True)
             else:
                 length_sequences_answer.append(False)
@@ -93,7 +93,7 @@ def quality_threshold_filter(qualities: list[str], quality_threshold: int = 0) -
             letter = ord(quality[symbol]) - 33
             summ_qualities += letter
         avg_quality = summ_qualities / len(quality)
-        if avg_quality > quality_threshold:
+        if avg_quality >= quality_threshold:
             quality_answers.append(True)
         else:
             quality_answers.append(False)
