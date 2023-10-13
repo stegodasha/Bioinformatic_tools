@@ -87,7 +87,8 @@ def protein_analysis(*args: str, procedure: str, cell_type: str = None, letter_f
         return procedures.get(procedure)(amino_acid_seqs)
 
 
-def filter_dna(seqs: dict, gc_bounds: int = (0, 100), length_bounds: int = (0, 2**32),
+def filter_dna(input_path=input('Please, enter file path:'), gc_bounds: int = (0, 100),
+               length_bounds: int = (0, 2 ** 32),
                quality_threshold: int = 0) -> dict:
     """
     Filter fastq-sequences by parameters: gc_bounds, length_bounds and quality_threshold.
@@ -103,6 +104,27 @@ def filter_dna(seqs: dict, gc_bounds: int = (0, 100), length_bounds: int = (0, 2
     Return:
     - the source dictionary filtered by all parameters
     """
+    seqs = {}
+    keys = []
+    values = []
+    list_line = []
+    with open(input_path) as fastq_file:
+        lines = fastq_file.readlines()
+        while len(list_line) < 2:
+            for line in lines:
+                if line.startswith('@SRX'):
+                    line = line.strip()
+                    keys.append(line)
+                elif line.startswith('+SRX'):
+                    continue
+                else:
+                    values.append(list_line)
+        # values.append(list_line)
+    # values = list(map(str.split, values))
+    # seqs = dict(zip(keys, values))
+    print(values)
+    # print(seqs)
+    # C:\Users\Ярослав\Downloads\example_fastq.fastq
     seqs_qualities = list(seqs.values())
     seqs_keys = list(seqs.keys())
 
@@ -123,3 +145,6 @@ def filter_dna(seqs: dict, gc_bounds: int = (0, 100), length_bounds: int = (0, 2
             del seqs[seqs_keys[seq_counter]]
 
     return seqs
+
+
+filter_dna()
