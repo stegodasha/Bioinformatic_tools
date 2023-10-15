@@ -1,20 +1,18 @@
-from internal_functions.dna_rna_tools import transcribe
-from internal_functions.dna_rna_tools import reverse
 from internal_functions.dna_rna_tools import complement
+from internal_functions.dna_rna_tools import reverse
 from internal_functions.dna_rna_tools import reverse_complement
-from internal_functions.protein_analysis_tool import molecular_weight
-from internal_functions.protein_analysis_tool import one_letter_to_three
-from internal_functions.protein_analysis_tool import get_amino_acid_sum
-from internal_functions.protein_analysis_tool import codon_optimization
-from internal_functions.protein_analysis_tool import length
-from internal_functions.protein_analysis_tool import name_transform
-from internal_functions.protein_analysis_tool import is_amino_acid
+from internal_functions.dna_rna_tools import transcribe
 from internal_functions.protein_analysis_tool import brutto_count
-from internal_functions.protein_analysis_tool import is_length_divisible_by_3
-from internal_functions.protein_analysis_tool import is_amino_acid_three_letter
+from internal_functions.protein_analysis_tool import codon_optimization
+from internal_functions.protein_analysis_tool import get_amino_acid_sum
+from internal_functions.protein_analysis_tool import length
+from internal_functions.protein_analysis_tool import molecular_weight
+from internal_functions.protein_analysis_tool import name_transform
+from internal_functions.protein_analysis_tool import one_letter_to_three
 from internal_functions.work_with_fastq import gc_count_filter
 from internal_functions.work_with_fastq import length_filter
 from internal_functions.work_with_fastq import quality_threshold_filter
+import os
 
 
 def run_dna_rna_tools(*args: str) -> str:
@@ -87,9 +85,11 @@ def protein_analysis(*args: str, procedure: str, cell_type: str = None, letter_f
         return procedures.get(procedure)(amino_acid_seqs)
 
 
-def filter_dna(input_path=input('Please, enter file path:'), gc_bounds: int = (0, 100),
+def filter_dna(input_path: str = input('Please, enter file path:'),
+               output_filename=input('Please enter name for results'),
+               gc_bounds: int = (0, 100),
                length_bounds: int = (0, 2 ** 32),
-               quality_threshold: int = 0) -> dict:
+               quality_threshold: int = 0) -> None:
     """
     Filter fastq-sequences by parameters: gc_bounds, length_bounds and quality_threshold.
 
@@ -104,25 +104,8 @@ def filter_dna(input_path=input('Please, enter file path:'), gc_bounds: int = (0
     Return:
     - the source dictionary filtered by all parameters
     """
-    seqs = {}
-    keys = []
-    values = []
-    list_line = []
-    with open(input_path) as fastq_file:
-        lines = fastq_file.readlines()
-        while len(list_line) < 2:
-            for line in lines:
-                if line.startswith('@SRX'):
-                    line = line.strip()
-                    keys.append(line)
-                elif line.startswith('+SRX'):
-                    continue
-                else:
-                    values.append(list_line)
-        # values.append(list_line)
-    # values = list(map(str.split, values))
-    # seqs = dict(zip(keys, values))
-    print(values)
+    seqs = read_file(input_path)
+    print(seqs)
     # print(seqs)
     # C:\Users\Ярослав\Downloads\example_fastq.fastq
     seqs_qualities = list(seqs.values())
@@ -143,8 +126,54 @@ def filter_dna(input_path=input('Please, enter file path:'), gc_bounds: int = (0
     for seq_counter in range(len(gcf)):
         if gcf[seq_counter] is False or lf[seq_counter] is False or qtf[seq_counter] is False:
             del seqs[seqs_keys[seq_counter]]
+    #print(seqs)
+    return write_file(output_filename, seqs)
 
+
+def read_file(input_path):
+    keys = []
+    values = []
+    values_final = []
+    with open(input_path) as fastq_file:
+        lines = fastq_file.readlines()
+        for line in lines:
+            if line.startswith('@SRX'):
+                line = line.strip()
+                keys.append(line)
+            elif line.startswith('+SRX'):
+                continue
+            else:
+                line = line.strip()
+                values.append(line)
+                # print(values)
+                if len(values) == 2:
+                    # print(True)
+                    values_final.append(values[0:len(values)])
+                    values.clear()
+        # values.append(list_line)
+    # values = list(map(str.split, values))
+    seqs = dict(zip(keys, values_final))
     return seqs
 
+
+def write_file(output_filename, seqs):
+    print(seqs)
+    keylist = list(seqs.keys())
+    vallist = list(seqs.values())
+    if not os.path.isdir("fastq_filtrator_resuls"):
+        os.mkdir("fastq_filtrator_resuls")
+    os.chdir("fastq_filtrator_resuls")
+    with open(output_filename + '.fastq', 'w') as output_file:
+        for key_iter in range(len(keylist)):
+            output_file.write(keylist[key_iter])
+            output_file.write('\n')
+            for value_iter in range(len(vallist[key_iter])):
+                output_file.write(vallist[key_iter][value_iter])
+                output_file.write('\n')
+
+
+            #if line in seqs or line in seqs.values():
+                #output_file.write(line)
+    # C:\Users\Ярослав\Downloads\example_fastq.fastq
 
 filter_dna()
