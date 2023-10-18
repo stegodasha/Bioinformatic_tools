@@ -170,8 +170,7 @@ def write_file(output_filename: str, seqs: dict):
                        and the value is a tuple of two strings: sequence and quality
 
         Return:
-        - seqs (dict): A dictionary where the key is the name of the sequence
-                       and the value is a tuple of two strings: sequence and quality
+        - File with filtered sequences
         """
     keylist = list(seqs.keys())
     vallist = list(seqs.values())
