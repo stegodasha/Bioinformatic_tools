@@ -89,13 +89,11 @@ def filter_dna(input_path: str = input('Please, enter file path:'),
                output_filename=input('Please enter name for results'),
                gc_bounds: int = (0, 100),
                length_bounds: int = (0, 2 ** 32),
-               quality_threshold: int = 0) -> None:
+               quality_threshold: int = 0):
     """
     Filter fastq-sequences by parameters: gc_bounds, length_bounds and quality_threshold.
 
     Arguments:
-    - seqs (dict): A dictionary where the key is the name of the sequence
-                   and the value is a tuple of two strings: sequence and quality
     - gc_bounds (int): the GC interval of the composition (in percent) for filtering (by default is (0, 100)
     - length_bounds (int): length interval for filtering (default is (0, 2**32))
     - quality_threshold (int): the threshold value of the average quality of the read
@@ -105,9 +103,6 @@ def filter_dna(input_path: str = input('Please, enter file path:'),
     - the source dictionary filtered by all parameters
     """
     seqs = read_file(input_path)
-    print(seqs)
-    # print(seqs)
-    # C:\Users\Ярослав\Downloads\example_fastq.fastq
     seqs_qualities = list(seqs.values())
     seqs_keys = list(seqs.keys())
 
@@ -126,11 +121,20 @@ def filter_dna(input_path: str = input('Please, enter file path:'),
     for seq_counter in range(len(gcf)):
         if gcf[seq_counter] is False or lf[seq_counter] is False or qtf[seq_counter] is False:
             del seqs[seqs_keys[seq_counter]]
-    #print(seqs)
     return write_file(output_filename, seqs)
 
 
-def read_file(input_path):
+def read_file(input_path: str) -> dict:
+    """
+    A function that writes a  fastq file as a dictionary
+
+    Arguments:
+    - input_path (str): the path to fastq file
+
+    Return:
+    - seqs (dict): A dictionary where the key is the name of the sequence
+                   and the value is a tuple of two strings: sequence and quality
+    """
     keys = []
     values = []
     values_final = []
@@ -156,8 +160,19 @@ def read_file(input_path):
     return seqs
 
 
-def write_file(output_filename, seqs):
-    print(seqs)
+def write_file(output_filename: str, seqs: dict):
+    """
+        A function that records a dictionary filtered by parameters as a fastq file
+
+        Arguments:
+        - output_filename (str): name for the new  fastq file
+        - seqs (dict): A dictionary where the key is the name of the sequence
+                       and the value is a tuple of two strings: sequence and quality
+
+        Return:
+        - seqs (dict): A dictionary where the key is the name of the sequence
+                       and the value is a tuple of two strings: sequence and quality
+        """
     keylist = list(seqs.keys())
     vallist = list(seqs.values())
     if not os.path.isdir("fastq_filtrator_resuls"):
@@ -170,10 +185,4 @@ def write_file(output_filename, seqs):
             for value_iter in range(len(vallist[key_iter])):
                 output_file.write(vallist[key_iter][value_iter])
                 output_file.write('\n')
-
-
-            #if line in seqs or line in seqs.values():
-                #output_file.write(line)
-    # C:\Users\Ярослав\Downloads\example_fastq.fastq
-
-filter_dna()
+            return output_file
