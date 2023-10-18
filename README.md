@@ -229,6 +229,8 @@ The main function `filter_dna`accepts 4 arguments as input: seqs, gc_bounds, len
 - `gc_count_filter` — filter sequences by parameter gc_bounds
 - `length_filter` — filter sequences by parameter length_bounds
 - `quality_threshold_filter` — filter qualities by parameter quality_threshold
+- `read_file` — write a  fastq file as a dictionary
+- `write_file` — record a dictionary filtered by parameters as a fastq file
 
 **Usage example**
 
@@ -259,3 +261,29 @@ My contacts for communication: kalabanova_dasha@mail.ru
 
 
 Thank you for your interest in my program! ✨✨
+# HW_6.Bio_files_processor
+> *This is the repo for the sixth homework of the BI Python 2023 course.*
+
+### Program work with fasta and gbk files
+
+Bio_files_processor is a utility for the work with bioinformatics files 
+
+**Basic functionality**
+
+The function `convert_multiline_fasta_to_oneline`accepts 2 arguments as input: input_fasta, output_fasta:
+
+- `input_fasta (str)`: the path to fasta file
+- `output_fasta (str)`: the path to the new output fasta file
+
+The function `select_genes_from_gbk_to_fasta`accepts 5 arguments as input: input_gbk, output_fasta, 
+                                              genes, n_before, n_after:
+- `input_gbk (str)`: the path to gbk file
+- `output_fasta (str)`: the path to the new output fasta file
+- `genes (list(str))`: list with users genes
+- `n_before (int)`: number of genes up to
+- `n_after (int)`: number of genes after
+
+**List of implemented functions:**
+
+- `convert_multiline_fasta_to_oneline` — makes one of several fasta sequences
+- `select_genes_from_gbk_to_fasta` — searches for neighboring genes with a user-defined gene
