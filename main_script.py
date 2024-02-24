@@ -1,187 +1,317 @@
-from internal_functions.dna_rna_tools import complement
-from internal_functions.dna_rna_tools import reverse
-from internal_functions.dna_rna_tools import reverse_complement
-from internal_functions.dna_rna_tools import transcribe
-from internal_functions.protein_analysis_tool import brutto_count
-from internal_functions.protein_analysis_tool import codon_optimization
-from internal_functions.protein_analysis_tool import get_amino_acid_sum
-from internal_functions.protein_analysis_tool import length
-from internal_functions.protein_analysis_tool import molecular_weight
-from internal_functions.protein_analysis_tool import name_transform
-from internal_functions.protein_analysis_tool import one_letter_to_three
-from internal_functions.work_with_fastq import gc_count_filter
-from internal_functions.work_with_fastq import length_filter
-from internal_functions.work_with_fastq import quality_threshold_filter
+from Bio import SeqIO
+from Bio.SeqUtils import gc_fraction
+from Bio.SeqRecord import SeqRecord
+from typing import List, Dict, Union, Tuple
+from abc import ABC, abstractmethod
 import os
 
 
-def run_dna_rna_tools(*args: str) -> str:
-    """
-    run_dna_rna_tools is a utility for working with sequences of nucleic acids
-
-    Arguments:
-    - args (str): an arbitrary number of arguments with DNA or RNA sequences,
-                      as well as the name of the procedure to be performed:
-                      transcribe, reverse, complement, reverse_complement
-    Return:
-    - the line with the result of the operation
-    """
-    sequences, operation = args[0:-1], args[-1].lower()
-    type_of_operation = {'transcribe': transcribe(sequences),
-                         'reverse': reverse(sequences),
-                         'complement': complement(sequences),
-                         'reverse_complement': reverse_complement(sequences)}
-    for sequence in sequences:
-        for nucleotide in sequence:
-            if 't' == nucleotide.lower() or 'u' == nucleotide.lower():
-                raise ValueError('A nonexistent sequence has been introduced')
-            else:
-                return type_of_operation.get(operation)
-    if len(args) < 2:
-        raise ValueError('Correct the input data: only 1 argument was received')
-    else:
-        raise ValueError('Check the function name')
-
-
-def protein_analysis(*args: str, procedure: str, cell_type: str = None, letter_format: int = 1) -> list:
-    """
-    Function protein_analysis:
-    - calculates predicted molecular weight of amino acid sequences in kDa (procedure name: molecular_weight)
-    - translate aa sequences from one-letter to three-letter code (procedure name: one_letter_to_three)
-    - calculates total amount of each amino acid in the sequences (procedure name: get_amino_acid_sum)
-    - makes DNA based codon optimization for the introduced amino acid sequences, support 3 types of cells:
-      Esherichia coli, Pichia pastoris, Mouse (procedure name: codon_optimization)
-    - calculates length of amino acid sequences (procedure name: length)
-    - counts the number of atoms of each type in a sequence (procedure name: brutto_count)
-
-    Arguments:
-    - one or multiple string of protein sequences written one letter or three letter code (not mixed)
-    - name of procedure as string
-    - cell type (required only for codon_optimization procedure)
-    - letter_format of code for the protein sequences as int: 1 for one letter, 3 for three letter code
-
-    Return:
-    - molecular_weight procedure returns list of floats
-    - one_letter_to_three procedure returns list of strings
-    - get_amino_acid_sum procedure returns list of dictionaries
-    - codon_optimization procedure returns list of strings
-    - length procedure returns list of int values
-    - brutto_count procedure returns list of dictionaries with counts of atoms in the sequence
-    """
-    amino_acid_seqs = name_transform(args, letter_format)
-    procedures = {
-        "molecular_weight": molecular_weight,
-        "one_letter_to_three": one_letter_to_three,
-        "get_amino_acid_sum": get_amino_acid_sum,
-        "codon_optimization": codon_optimization,
-        "length": length,
-        "brutto_count": brutto_count,
-    }
-    if procedure not in procedures.keys():
-        raise ValueError("Requested procedure is not defined")
-    elif procedure == "codon_optimization":
-        return procedures.get(procedure)(amino_acid_seqs, cell_type)
-    else:
-        return procedures.get(procedure)(amino_acid_seqs)
-
-
-def filter_dna(input_path: str = input('Please, enter file path:'),
-               output_filename=input('Please enter name for results'),
-               gc_bounds: int = (0, 100),
-               length_bounds: int = (0, 2 ** 32),
-               quality_threshold: int = 0):
-    """
-    Filter fastq-sequences by parameters: gc_bounds, length_bounds and quality_threshold.
-
-    Arguments:
-    - gc_bounds (int): the GC interval of the composition (in percent) for filtering (by default is (0, 100)
-    - length_bounds (int): length interval for filtering (default is (0, 2**32))
-    - quality_threshold (int): the threshold value of the average quality of the read
-                               for filtering (by default is 0)
-
-    Return:
-    - the source dictionary filtered by all parameters
-    """
-    seqs = read_file(input_path)
-    seqs_qualities = list(seqs.values())
-    seqs_keys = list(seqs.keys())
-
-    sequences = []
-    qualities = []
-
-    for sequence in range(len(seqs_qualities)):
-        sequences.append(seqs_qualities[sequence][0])
-    for quality in range(len(seqs_qualities)):
-        qualities.append(seqs_qualities[quality][1])
-
-    gcf = gc_count_filter(sequences, gc_bounds)
-    lf = length_filter(sequences, length_bounds)
-    qtf = quality_threshold_filter(qualities, quality_threshold)
-
-    for seq_counter in range(len(gcf)):
-        if gcf[seq_counter] is False or lf[seq_counter] is False or qtf[seq_counter] is False:
-            del seqs[seqs_keys[seq_counter]]
-    return write_file(output_filename, seqs)
-
-
-def read_file(input_path: str) -> dict:
-    """
-    A function that writes a  fastq file as a dictionary
-
-    Arguments:
-    - input_path (str): the path to fastq file
-
-    Return:
-    - seqs (dict): A dictionary where the key is the name of the sequence
-                   and the value is a tuple of two strings: sequence and quality
-    """
-    keys = []
-    values = []
-    values_final = []
-    with open(input_path) as fastq_file:
-        lines = fastq_file.readlines()
-        for line in lines:
-            if line.startswith('@SRX'):
-                line = line.strip()
-                keys.append(line)
-            elif line.startswith('+SRX'):
-                continue
-            else:
-                line = line.strip()
-                values.append(line)
-                # print(values)
-                if len(values) == 2:
-                    # print(True)
-                    values_final.append(values[0:len(values)])
-                    values.clear()
-        # values.append(list_line)
-    # values = list(map(str.split, values))
-    seqs = dict(zip(keys, values_final))
-    return seqs
-
-
-def write_file(output_filename: str, seqs: dict):
-    """
-        A function that records a dictionary filtered by parameters as a fastq file
-
-        Arguments:
-        - output_filename (str): name for the new  fastq file
-        - seqs (dict): A dictionary where the key is the name of the sequence
-                       and the value is a tuple of two strings: sequence and quality
-
-        Return:
-        - File with filtered sequences
+class FastQFilter:
+    def __init__(self, input_path: str, output_filename: str, gc_bounds: Union[int, Tuple[int, int]] = (0, 100),
+                 length_bounds: Union[int, Tuple[int, int]] = (0, 2**32), quality_threshold: int = 0):
         """
-    keylist = list(seqs.keys())
-    vallist = list(seqs.values())
-    if not os.path.isdir("fastq_filtrator_resuls"):
-        os.mkdir("fastq_filtrator_resuls")
-    os.chdir("fastq_filtrator_resuls")
-    with open(output_filename + '.fastq', 'w') as output_file:
-        for key_iter in range(len(keylist)):
-            output_file.write(keylist[key_iter])
-            output_file.write('\n')
-            for value_iter in range(len(vallist[key_iter])):
-                output_file.write(vallist[key_iter][value_iter])
-                output_file.write('\n')
-            return output_file
+        Initialize FastQFilter instance.
+
+        Parameters:
+        - input_path (str): Path to the input FastQ file.
+        - output_filename (str): Name for the output FastQ file.
+        - gc_bounds (Union[int, Tuple[int, int]]): GC content bounds for filtering.
+        - length_bounds (Union[int, Tuple[int, int]]): Length bounds for filtering.
+        - quality_threshold (int): Quality threshold for filtering.
+        """
+        self.input_path = input_path
+        self.output_filename = output_filename
+        self.gc_bounds = gc_bounds
+        self.length_bounds = length_bounds
+        self.quality_threshold = quality_threshold
+
+    def filter_fastq(self) -> None:
+        """
+        Read, filter, and write FastQ records based on specified criteria.
+        """
+        records = self.read_fastq()
+        filtered_records = self.apply_filters(records)
+        self.write_fastq(filtered_records)
+
+    def read_fastq(self) -> List[SeqRecord]:
+        """
+        Read FastQ file and return a list of SeqRecord objects.
+        """
+        records = list(SeqIO.parse(self.input_path, "fastq"))
+        return records
+
+    def apply_filters(self, records: List[SeqRecord]) -> List[SeqRecord]:
+        """
+        Filter SeqRecord objects based on specified criteria.
+
+        Parameters:
+        - records (List[SeqRecord]): List of SeqRecord objects to filter.
+
+        Returns:
+        - List[SeqRecord]: Filtered list of SeqRecord objects.
+        """
+        filtered_records = []
+
+        for record in records:
+            gc_content = gc_fraction(record.seq)
+            length = len(record.seq)
+            avg_quality = sum(record.letter_annotations["phred_quality"]) / len(record.letter_annotations["phred_quality"])
+
+            gc_pass = self.check_bounds(gc_content, self.gc_bounds)
+            length_pass = self.check_bounds(length, self.length_bounds)
+            quality_pass = avg_quality >= self.quality_threshold
+
+            if gc_pass and length_pass and quality_pass:
+                filtered_records.append(record)
+
+        return filtered_records
+
+    def check_bounds(self, value: int, bounds: Union[int, Tuple[int, int]]) -> bool:
+        """
+        Check if a value is within the specified bounds.
+
+        Parameters:
+        - value (int): Value to check.
+        - bounds (Union[int, Tuple[int, int]]): Bounds to check against.
+
+        Returns:
+        - bool: True if value is within bounds, False otherwise.
+        """
+        if isinstance(bounds, int):
+            return value <= bounds
+        else:
+            return bounds[0] <= value <= bounds[1]
+
+    def write_fastq(self, records: List[SeqRecord]) -> None:
+        """
+        Write SeqRecord objects to a new FastQ file.
+
+        Parameters:
+        - records (List[SeqRecord]): List of SeqRecord objects to write.
+        """
+        output_dir = "fastq_filtrator_results"
+        output_path = f"{output_dir}/{self.output_filename}.fastq"
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        SeqIO.write(records, output_path, "fastq")
+        print(f"Filtered sequences written to {output_path}")
+
+class BiologicalSequence(ABC):
+    """
+    Abstract base class for biological sequences.
+    """
+
+    def __init__(self, sequence: str):
+        """
+        Initialize a BiologicalSequence instance.
+
+        Parameters:
+        - sequence (str): The biological sequence.
+
+        The sequence is automatically converted to uppercase.
+        """
+        self.sequence = sequence.upper()
+        self.validate_alphabet()
+
+    def __len__(self) -> int:
+        """
+        Return the length of the sequence.
+
+        Returns:
+        - int: Length of the sequence.
+        """
+        return len(self.sequence)
+    
+    def __getitem__(self, index: int) -> str:
+        """
+        Get the character at the specified index in the sequence.
+
+        Parameters:
+        - index (int): The index to retrieve.
+
+        Returns:
+        - str: The character at the specified index.
+        """
+        return self.sequence[index]
+    
+    def __str__(self) -> str:
+        """
+        Return the string representation of the sequence.
+
+        Returns:
+        - str: String representation of the sequence.
+        """
+        return self.sequence
+    
+    @abstractmethod
+    def is_valid_alphabet(self) -> bool:
+        """
+        Check if the sequence contains a valid alphabet.
+
+        Returns:
+        - bool: True if the alphabet is valid, False otherwise.
+        """
+        pass
+
+    def validate_alphabet(self) -> None:
+        """
+        Validate the alphabet of the sequence.
+
+        Raises:
+        - ValueError: If the alphabet is not valid.
+        """
+        if not self.is_valid_alphabet():
+            raise ValueError("Invalid alphabet for {}: {}".format(self.__class__.__name__, str(self)))
+
+class NucleicAcidSequence(BiologicalSequence):
+    """
+    Class representing nucleic acid sequences.
+    """
+    def complement(self) -> 'NucleicAcidSequence':
+        """
+        Return the complement of the sequence.
+
+        Returns:
+        - NucleicAcidSequence: Complement of the sequence.
+        """
+        self.validate_alphabet()
+        return self.__class__(''.join([self.complement_base(base) for base in self.sequence]))
+    
+    def gc_content(self) -> float:
+        """
+        Calculate the GC content of the sequence.
+
+        Returns:
+        - float: GC content of the sequence.
+        """
+        self.validate_alphabet()
+        gc_count = sum(1 for base in self.sequence if base in {'G', 'C'})
+        return gc_count / len(self)
+
+class DNASequence(NucleicAcidSequence):
+    """
+    Class representing DNA sequences.
+    """
+    def transcribe(self) -> 'RNASequence':
+        """
+        Transcribe the DNA sequence into RNA.
+
+        Returns:
+        - RNASequence: Transcribed RNA sequence.
+        """
+        self.validate_alphabet()
+        return RNASequence(''.join(['U' if base == 'T' else base for base in self.sequence]))
+    
+    def complement_base(self, base: str) -> str:
+        """
+        Return the complement of a DNA base.
+
+        Parameters:
+        - base (str): The DNA base.
+
+        Returns:
+        - str: Complement of the DNA base.
+        """
+        if base == 'A':
+            return 'T'
+        elif base == 'T':
+            return 'A'
+        elif base == 'C':
+            return 'G'
+        elif base == 'G':
+            return 'C'
+    
+    def is_valid_alphabet(self) -> bool:
+        """
+        Check if the DNA sequence contains a valid alphabet.
+
+        Returns:
+        - bool: True if the alphabet is valid, False otherwise.
+        """
+        return set(self.sequence) <= {'A', 'T', 'C', 'G'}
+
+class RNASequence(NucleicAcidSequence):
+    """
+    Class representing RNA sequences.
+    """
+    def is_valid_alphabet(self) -> bool:
+        """
+        Check if the RNA sequence contains a valid alphabet.
+
+        Returns:
+        - bool: True if the alphabet is valid, False otherwise.
+        """
+        return set(self.sequence) <= {'A', 'U', 'C', 'G'}
+    
+    def complement_base(self, base: str) -> str:
+        """
+        Return the complement of an RNA base.
+
+        Parameters:
+        - base (str): The RNA base.
+
+        Returns:
+        - str: Complement of the RNA base.
+        """
+        if base == 'A':
+            return 'U'
+        elif base == 'U':
+            return 'A'
+        elif base == 'C':
+            return 'G'
+        elif base == 'G':
+            return 'C'
+
+class AminoAcidSequence(BiologicalSequence):
+    """
+    Class representing amino acid sequences.
+    """
+    amino_brutto = {
+        "A": (3, 7, 1, 2, 0),
+        "R": (6, 14, 4, 2, 0),
+        "N": (4, 8, 2, 3, 0),
+        "D": (4, 7, 1, 4, 0),
+        "V": (5, 11, 1, 2, 0),
+        "H": (6, 9, 3, 2, 0),
+        "G": (2, 5, 1, 2, 0),
+        "Q": (5, 10, 2, 3, 0),
+        "E": (5, 9, 1, 4, 0),
+        "I": (6, 13, 1, 2, 0),
+        "L": (6, 13, 1, 2, 0),
+        "K": (6, 14, 2, 2, 0),
+        "M": (5, 11, 1, 2, 1),
+        "P": (5, 9, 1, 2, 0),
+        "S": (3, 7, 1, 3, 0),
+        "Y": (9, 11, 1, 3, 0),
+        "T": (4, 9, 11, 1, 3, 0),
+        "W": (11, 12, 2, 2, 0),
+        "F": (9, 11, 1, 2, 0),
+        "C": (3, 7, 1, 2, 1),
+    }
+
+    def is_valid_alphabet(self) -> bool:
+        """
+        Check if the amino acid sequence contains a valid alphabet.
+
+        Returns:
+        - bool: True if the alphabet is valid, False otherwise.
+        """
+        return set(self.sequence) <= {'A', 'R', 'N', 'D', 'V', 'H', 'G', 'Q', 'E', 'I', 'L', 'K', 'M',
+                                      'P', 'S', 'Y', 'T', 'W', 'F', 'C'}
+
+    def brutto_count(self) -> List[Dict[str, int]]:
+        """
+        Calculate the Brutto formula values for each amino acid in the sequence.
+
+        Returns:
+        - List[Dict[str, int]]: List of dictionaries containing Brutto formula values for each amino acid.
+        """
+        self.validate_alphabet()
+        elements = ["C", "H", "N", "O", "S"]
+        result = []
+        for letter in self.sequence:
+            brutto_values = self.amino_brutto.get(letter, (0, 0, 0, 0, 0))
+            result.append(dict(zip(elements, brutto_values)))
+        return result
+    
